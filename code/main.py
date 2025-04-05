@@ -20,6 +20,13 @@ from torch.nn import TransformerEncoder, TransformerEncoderLayer
 from torch.nn.utils.rnn import pad_sequence
 from sklearn.model_selection import train_test_split
 
+from evaluation import eval_with_classifier
+from lightgbm import LGBMClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
+from catboost import CatBoostClassifier
+
 
 # Custom Encoder Class
 class TransformerKoreanEncoder(nn.Module):
@@ -79,7 +86,7 @@ corpus_embeddings = []
 brk = 0
 dataset_length = len(korean_dataset["input_text_long"])
 print()
-print("===============================================================================")
+print("===========================================================================")
 print()
 print("< Corpus Vectorization Process >")
 print()
@@ -103,7 +110,7 @@ for corpus in korean_dataset["input_text_long"]:
 
     # CLS token extracting
     cls_tokens = output.last_hidden_state[:, 0, :]
-    sentence_embeddings = cls_tokens.cpu()
+    sentence_embeddings = cls_tokens.cpu().detach()
     corpus_embeddings.append(sentence_embeddings)
 
     brk += 1
@@ -143,42 +150,64 @@ test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 # TransformerKoreanEncoder
 kor_encoder = TransformerKoreanEncoder(
     input_dim=768,
-    hidden_dim=3072,
-    num_heads=8,
+    hidden_dim=768,
+    num_heads=12,
     dropout=0.1,
-    num_layers=6,
+    num_layers=2,
 )
+kor_encoder.to(device)
 
-print("===============================================================================")
+print("===========================================================================")
 print()
 print("< Hierarchical BERT - Transformer >")
 print()
 
-# Generate embeddings by batch size
+# Generate train embeddings & labels by batch size
 all_input_train_embeddings = []
 all_input_train_labels = []
 for train_batch in train_loader:
+    train_batch = [t.to(device) for t in train_batch]
     train_batch_embs, train_batch_masks, train_batch_labels = train_batch
     train_input_embeddings = kor_encoder(train_batch_embs, train_batch_masks)
     all_input_train_embeddings.append(train_input_embeddings.cpu().detach())
-    all_input_train_labels.append(train_batch_labels)
+    all_input_train_labels.append(train_batch_labels.cpu().detach())
+
+# Change into full-batch numpy ndarry
 all_input_train_embeddings = torch.cat(all_input_train_embeddings, dim=0)
 all_input_train_labels = torch.cat(all_input_train_labels, dim=0)
-print("[ Train Shape ]")
-print(all_input_train_embeddings.shape)
-print(all_input_train_labels.shape)
-print()
+X_train = all_input_train_embeddings.numpy()
+Y_train = all_input_train_labels.numpy()
 
+# Generate test embeddings & labels by batch size
 all_input_test_embeddings = []
 all_input_test_labels = []
 for test_batch in test_loader:
+    test_batch = [t.to(device) for t in test_batch]
     test_batch_embs, test_batch_masks, test_batch_labels = test_batch
     test_input_embeddings = kor_encoder(test_batch_embs, test_batch_masks)
     all_input_test_embeddings.append(test_input_embeddings.cpu().detach())
-    all_input_test_labels.append(test_batch_labels)
+    all_input_test_labels.append(test_batch_labels.cpu().detach())
+
+# Change into full-batch numpy ndarry
 all_input_test_embeddings = torch.cat(all_input_test_embeddings, dim=0)
 all_input_test_labels = torch.cat(all_input_test_labels, dim=0)
-print("[ Test Shape ]")
-print(all_input_test_embeddings.shape)
-print(all_input_test_labels.shape)
+X_test = all_input_test_embeddings.numpy()
+Y_test = all_input_test_labels.numpy()
+
+# Define classifier models
+model_dict = {
+    "LightGBM": LGBMClassifier(random_state=42, verbose=1),
+    "RandomForest": RandomForestClassifier(random_state=42, verbose=1),
+    "LogisticRegression": LogisticRegression(random_state=42, verbose=1),
+    "SVC": SVC(probability=True, random_state=42, verbose=1),
+    "CatBoost": CatBoostClassifier(random_state=42, verbose=1)
+}
+
+# Train & Evaluation
+print("===========================================================================")
 print()
+print("< Result >")
+train_set = (X_train, Y_train)
+test_set = (X_test, Y_test)
+for model_id, model_instance in model_dict.items():
+    eval_with_classifier(model_id, model_instance, train_set, test_set)
