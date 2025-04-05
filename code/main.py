@@ -1,9 +1,14 @@
 import os
 import sys
 
-# 부모 폴더 경로 가져오기
+# Get parent folder path
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(parent_dir)
+
+# Ignore warnings
+import warnings
+
+warnings.filterwarnings("ignore")
 
 from utils import set_seed
 import torch
@@ -153,7 +158,7 @@ kor_encoder = TransformerKoreanEncoder(
     hidden_dim=768,
     num_heads=12,
     dropout=0.1,
-    num_layers=2,
+    num_layers=4,
 )
 kor_encoder.to(device)
 
@@ -196,11 +201,11 @@ Y_test = all_input_test_labels.numpy()
 
 # Define classifier models
 model_dict = {
-    "LightGBM": LGBMClassifier(random_state=42, verbose=1),
-    "RandomForest": RandomForestClassifier(random_state=42, verbose=1),
-    "LogisticRegression": LogisticRegression(random_state=42, verbose=1),
-    "SVC": SVC(probability=True, random_state=42, verbose=1),
-    "CatBoost": CatBoostClassifier(random_state=42, verbose=1)
+    "LightGBM": LGBMClassifier(random_state=42, verbose=0),
+    "RandomForest": RandomForestClassifier(random_state=42, verbose=0),
+    "LogisticRegression": LogisticRegression(random_state=42, verbose=0),
+    "SVC": SVC(probability=True, random_state=42, verbose=0),
+    "CatBoost": CatBoostClassifier(random_state=42, verbose=0),
 }
 
 # Train & Evaluation
