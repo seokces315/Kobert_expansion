@@ -1,8 +1,45 @@
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
+
 from sklearn.metrics import (
     accuracy_score,
     f1_score,
     roc_auc_score,
 )
+
+
+# Function to plot vector embeddings on low dimensions
+def manifold_plot(method, embeddings, labels):
+
+    # PCA into 2D space
+    if method == 0:
+        pca = PCA(n_components=2, random_state=42)
+        reduced_embeddings = pca.fit_transform(embeddings)
+    elif method == 1:
+        tSNE = TSNE(n_components=2, random_state=42)
+        reduced_embeddings = tSNE.fit_transform(embeddings)
+
+    # Visualization
+    plt.figure(figsize=(10, 8))
+    sns.scatterplot(
+        x=reduced_embeddings[:, 0],
+        y=reduced_embeddings[:, 1],
+        hue=labels,
+        palette="tab10",
+        s=100,
+        alpha=0.7,
+    )
+    plt.title("Visualization of Embeddings with Difficulty Labels")
+    plt.xlabel("X")
+    plt.ylabel("Y")
+    plt.legend(title="Difficulty Label")
+
+    if method == 0:
+        plt.savefig("PCA.png")
+    elif method == 1:
+        plt.savefig("tSNE.png")
 
 
 # Function to evaluate embeddings with various classifiers
