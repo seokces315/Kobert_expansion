@@ -161,6 +161,7 @@ def eval_with_classifier(model_id, model_instance, train_set, test_set):
     except ValueError:
         auc_macro, auc_weighted = None, None
 
+    print()
     print(f"[ {model_id} ]")
     print(f"Accuracy -> {accuracy:.4f}")
     print(f"F1 Score -> (macro: {f1_macro:.4f}) | (weighted: {f1_weighted:.4f})")

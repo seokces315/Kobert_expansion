@@ -55,5 +55,3 @@ def load_data(csv_file):
 
 if __name__ == "__main__":
     csat_kor_dataset = load_data("KoreanData.csv")
-    print(csat_kor_dataset.loc[0, "text"])
-    print(csat_kor_dataset.loc[0, "label"])

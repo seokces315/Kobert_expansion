@@ -26,7 +26,7 @@ from torch.nn import TransformerEncoder, TransformerEncoderLayer
 from torch.nn.utils.rnn import pad_sequence
 from sklearn.model_selection import train_test_split
 
-from evaluation import eval_with_classifier
+from train import eval_with_classifier
 from lightgbm import LGBMClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
